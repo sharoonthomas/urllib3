@@ -10,6 +10,7 @@ create_default_context = None
 
 import errno
 import ssl
+import sys
 
 try:  # Test for SSL features
     from ssl import wrap_socket, CERT_NONE, PROTOCOL_SSLv23
@@ -36,7 +37,6 @@ except ImportError:
 try:
     from ssl import SSLContext  # Modern SSL?
 except ImportError:
-    import sys
 
     class SSLContext(object):  # Platform-specific: Python 2 & 3.1
         supports_set_ciphers = sys.version_info >= (2, 7)
@@ -252,6 +252,8 @@ def ssl_wrap_socket(sock, keyfile=None, certfile=None, cert_reqs=None,
             raise
     if certfile:
         context.load_cert_chain(certfile, keyfile)
-    if HAS_SNI:  # Platform-specific: OpenSSL with enabled SNI
+    if HAS_SNI and sys.version_info >= (2, 7, 9): # Platform-specific: Python 2.7+
+        # Platform-specific: OpenSSL with enabled SNI
+        # Only 2.7.9+ supports server_hostname
         return context.wrap_socket(sock, server_hostname=server_hostname)
     return context.wrap_socket(sock)
